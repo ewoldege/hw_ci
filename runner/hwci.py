@@ -69,6 +69,16 @@ def run_lint(stage, repo_dir: Path, stage_dir: Path):
 
 def run_build(stage, repo_dir: Path, stage_dir: Path, jobs: int):
     cmd = verilator_base_cmd(stage, repo_dir)
+    mode_flags = {
+        "--binary",
+        "--cc",
+        "--sc",
+        "--dpi-hdr-only",
+        "--lint-only",
+        "--xml-only",
+        "--json-only",
+        "--E",
+    }
     top = stage.get("top")
     if top:
         cmd.extend(["--top-module", top])
@@ -78,7 +88,11 @@ def run_build(stage, repo_dir: Path, stage_dir: Path, jobs: int):
 
     exe = stage.get("exe", [])
     if exe:
+        if not any(flag in mode_flags for flag in stage.get("flags", [])):
+            cmd.insert(1, "--cc")
         cmd.extend(["--exe"] + resolve_paths(repo_dir, exe))
+    elif not any(flag in mode_flags for flag in stage.get("flags", [])):
+        cmd.insert(1, "--binary")
     cmd.append("--build")
     if jobs:
         cmd.extend(["-j", str(jobs)])
