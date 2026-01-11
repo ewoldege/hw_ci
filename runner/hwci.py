@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -177,6 +178,18 @@ def run_plan(repo_url: str, sha: str, plan_path: Path, out_dir: Path, jobs: int)
                 raise ValueError(f"unknown stage type: {stage_type}")
 
             exit_code, start, finish = run_cmd(cmd, cwd=checkout_dir, log_path=log_path)
+            if stage_type == "sim":
+                pass_regex = stage.get("pass_regex")
+                fail_regex = stage.get("fail_regex")
+                if pass_regex or fail_regex:
+                    with open(log_path, "r", encoding="ascii", errors="replace") as handle:
+                        log_text = handle.read()
+                    if fail_regex and re.search(fail_regex, log_text):
+                        exit_code = 1
+                        result["failure_reason"] = f"fail_regex matched: {fail_regex}"
+                    elif pass_regex and not re.search(pass_regex, log_text):
+                        exit_code = 1
+                        result["failure_reason"] = f"pass_regex not matched: {pass_regex}"
             result.update(
                 {
                     "status": "passed" if exit_code == 0 else "failed",
