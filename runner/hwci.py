@@ -84,7 +84,8 @@ def run_build(stage, repo_dir: Path, stage_dir: Path, jobs: int):
     if top:
         cmd.extend(["--top-module", top])
 
-    mdir = stage_dir / "obj_dir"
+    mdir = (stage_dir / "obj_dir").resolve()
+    ensure_dir(mdir)
     cmd.extend(["--Mdir", str(mdir)])
 
     exe = stage.get("exe", [])
